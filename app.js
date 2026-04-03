@@ -125,7 +125,7 @@ async function fetchThreadData(threadId, url, isRefresh = false) {
             htmlString = await directResponse.text();
         }
     } catch (directError) {
-        if (!apiKey) {
+        if (!userProxySetting) {
             try {
                 // Public proxy fallback (usually fails on Bakusai due to WAF)
                 const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
