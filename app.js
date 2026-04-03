@@ -121,10 +121,11 @@ async function fetchThreadData(threadId, url, isRefresh = false) {
         // Clean up common forum artifacts
         jpText = jpText.replace(/>>\d+/g, ''); // Remove reply anchors like >>914
         jpText = jpText.replace(/最新レス/g, ''); // Remove latest response tag
+        jpText = jpText.replace(/最終レス/g, ''); // Remove final response tag
         // Remove "? Good! ? Bad" polls along with any emojis or numbers attached to them
         jpText = jpText.replace(/(?:[\uD800-\uDBFF][\uDC00-\uDFFF]|\?|👍|👎)?\s*(Good!|Bad)\s*\d*/gi, '');
         // Remove NO.xxxxx 2026/03/17 01:50 header line that sneaks into post bodies
-        jpText = jpText.replace(/NO\.\d+\s+\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}/gi, '');
+        jpText = jpText.replace(/NO\.\d+[\s\S]{0,20}?\d{4}\/\d{2}\/\d{2}[\s\S]{0,5}?\d{2}:\d{2}/gi, '');
         
         jpText = jpText.trim(); 
         if (!jpText) continue;
