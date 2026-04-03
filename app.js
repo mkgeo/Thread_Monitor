@@ -1,6 +1,6 @@
 // State Elements
-let threads = [];
-let activeThreadId = null;
+let threads = JSON.parse(localStorage.getItem('forum_threads')) || [];
+let activeThreadId = threads.length > 0 ? threads[0].id : null;
 let currentTargetLang = 'en'; // 'en', 'zh', 'none'
 
 // DOM Elements
@@ -11,6 +11,20 @@ const tabContainer = document.getElementById('tab-container');
 const contentArea = document.getElementById('content-area');
 const langSelect = document.getElementById('lang-select');
 const refreshBtn = document.getElementById('refresh-btn');
+const apiKeyInput = document.getElementById('api-key-input');
+
+// Initialize State
+if (apiKeyInput) {
+    apiKeyInput.value = localStorage.getItem('scraper_api_key') || '';
+    apiKeyInput.addEventListener('change', (e) => {
+        localStorage.setItem('scraper_api_key', e.target.value.trim());
+    });
+}
+
+// Initial Render
+renderSidebar();
+renderTabs();
+renderContent();
 
 // Event Listeners
 addBtn.addEventListener('click', handleAddThread);
@@ -46,12 +60,24 @@ async function handleAddThread() {
     urlInput.value = '';
     
     activeThreadId = newThread.id;
+    saveState();
     
     renderSidebar();
     renderTabs();
     renderContent();
 
     await fetchThreadData(newThread.id, url, false);
+}
+
+function saveState() {
+    try {
+        localStorage.setItem('forum_threads', JSON.stringify(threads));
+    } catch (e) {
+        console.warn("Storage limits reached, clearing data payloads");
+        // Fallback: Save metadata only if localStorage is full
+        const lightweightThreads = threads.map(t => ({...t, data: null, status: 'loading'}));
+        localStorage.setItem('forum_threads', JSON.stringify(lightweightThreads));
+    }
 }
 
 async function fetchThreadData(threadId, url, isRefresh = false) {
@@ -64,26 +90,61 @@ async function fetchThreadData(threadId, url, isRefresh = false) {
     }
 
     let htmlString = "";
+    
+    // Check if user provided a ScraperAPI key or Custom Proxy URL
+    const userProxySetting = localStorage.getItem('scraper_api_key');
 
     try {
-        const directResponse = await fetch(url);
-        htmlString = await directResponse.text();
+        if (userProxySetting) {
+            let fetchUrl = '';
+            // If they pasted a URL (like a Cloudflare worker "https://my-worker.workers.dev/?url=")
+            if (userProxySetting.startsWith('http')) {
+                // Determine if the URL already has query params
+                const separator = userProxySetting.includes('?') ? (userProxySetting.endsWith('=') ? '' : '&url=') : '?url=';
+                // Some proxies require the raw URL appended directly
+                if (userProxySetting.endsWith('=')) {
+                    fetchUrl = `${userProxySetting}${encodeURIComponent(url)}`;
+                } else {
+                    fetchUrl = `${userProxySetting}${separator}${encodeURIComponent(url)}`;
+                }
+            } else {
+                // If it's just a raw code, assume ScraperAPI Key fallback
+                fetchUrl = `https://api.scraperapi.com?api_key=${userProxySetting}&url=${encodeURIComponent(url)}`;
+            }
+            const response = await fetch(fetchUrl);
+            htmlString = await response.text();
+            
+            // Fallback unwrap if proxy wraps in JSON
+            try {
+                const parsedJson = JSON.parse(htmlString);
+                if (parsedJson.contents) htmlString = parsedJson.contents;
+            } catch (e) {}
+        } else {
+            // Standard direct fetch behavior (works with Desktop Allow CORS extension)
+            const directResponse = await fetch(url);
+            htmlString = await directResponse.text();
+        }
     } catch (directError) {
-        try {
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-            const response = await fetch(proxyUrl);
-            const json = await response.json();
-            htmlString = json.contents;
-        } catch (proxyError) {
-            threads[threadIndex].status = 'error';
-            renderContent();
-            renderTabs();
-            return;
+        if (!apiKey) {
+            try {
+                // Public proxy fallback (usually fails on Bakusai due to WAF)
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                const response = await fetch(proxyUrl);
+                const json = await response.json();
+                htmlString = json.contents;
+            } catch (proxyError) {
+                threads[threadIndex].status = 'error';
+                saveState();
+                renderContent();
+                renderTabs();
+                return;
+            }
         }
     }
 
     if (!htmlString) {
         threads[threadIndex].status = 'error';
+        saveState();
         renderContent();
         renderTabs();
         return;
@@ -95,6 +156,7 @@ async function fetchThreadData(threadId, url, isRefresh = false) {
     const pageTitle = doc.querySelector('title') ? doc.querySelector('title').innerText : '';
     if (pageTitle.includes("アクセスエラー") || pageTitle.includes("Access denied")) {
         threads[threadIndex].status = 'error';
+        saveState();
         renderContent();
         renderTabs();
         return;
@@ -167,6 +229,7 @@ async function fetchThreadData(threadId, url, isRefresh = false) {
     threads[threadIndex].status = 'ready';
     threads[threadIndex].title = title.substring(0, 30) + "...";
     threads[threadIndex].data = { title, posts };
+    saveState();
     
     if (activeThreadId === threadId) {
         renderSidebar();
@@ -219,6 +282,7 @@ async function translateSinglePost(threadId, postId, targetLang) {
             });
         }
         post[targetLang] = translated;
+        saveState();
 
         // Update the specific DOM element safely
         if (activeThreadId === threadId && currentTargetLang === targetLang) {
@@ -246,6 +310,7 @@ function removeThread(threadId, event) {
     if (activeThreadId === threadId) {
         activeThreadId = threads.length > 0 ? threads[0].id : null;
     }
+    saveState();
     renderSidebar();
     renderTabs();
     renderContent();
