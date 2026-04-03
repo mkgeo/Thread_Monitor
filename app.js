@@ -21,28 +21,6 @@ if (apiKeyInput) {
     });
 }
 
-// Initial Render
-renderSidebar();
-renderTabs();
-renderContent();
-
-// Event Listeners
-addBtn.addEventListener('click', handleAddThread);
-urlInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleAddThread();
-});
-
-langSelect.addEventListener('change', (e) => {
-    currentTargetLang = e.target.value;
-    renderContent();
-});
-
-refreshBtn.addEventListener('click', () => {
-    if (activeThreadId) {
-        const thread = threads.find(t => t.id === activeThreadId);
-        if (thread) fetchThreadData(thread.id, thread.url, true);
-    }
-});
 
 async function handleAddThread() {
     const url = urlInput.value.trim();
@@ -447,3 +425,29 @@ function renderContent() {
         });
     }
 }
+
+// ---------------------------------------------
+// Boot Sequence
+// ---------------------------------------------
+// Initial Render
+renderSidebar();
+renderTabs();
+renderContent();
+
+// Event Listeners
+addBtn.addEventListener('click', handleAddThread);
+urlInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleAddThread();
+});
+
+langSelect.addEventListener('change', (e) => {
+    currentTargetLang = e.target.value;
+    renderContent();
+});
+
+refreshBtn.addEventListener('click', () => {
+    if (activeThreadId) {
+        const thread = threads.find(t => t.id === activeThreadId);
+        if (thread) fetchThreadData(thread.id, thread.url, true);
+    }
+});
