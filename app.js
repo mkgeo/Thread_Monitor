@@ -124,8 +124,9 @@ async function fetchThreadData(threadId, url, isRefresh = false) {
         jpText = jpText.replace(/最終レス/g, ''); // Remove final response tag
         // Remove "? Good! ? Bad" polls along with any emojis or numbers attached to them
         jpText = jpText.replace(/(?:[\uD800-\uDBFF][\uDC00-\uDFFF]|\?|👍|👎)?\s*(Good!|Bad)\s*\d*/gi, '');
-        // Remove NO.xxxxx 2026/03/17 01:50 header line that sneaks into post bodies
-        jpText = jpText.replace(/NO\.\d+[\s\S]{0,20}?\d{4}\/\d{2}\/\d{2}[\s\S]{0,5}?\d{2}:\d{2}/gi, '');
+        
+        // Aggressively remove ANY line that contains NO. followed by numbers and a date pattern
+        jpText = jpText.split('\n').filter(line => !line.match(/NO\.?\s*\d+/i) && !line.match(/\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}/)).join('\n');
         
         jpText = jpText.trim(); 
         if (!jpText) continue;
@@ -335,13 +336,21 @@ function renderContent() {
             const currentTrans = post[currentTargetLang];
             transHtml = `<div class="content-translation" id="trans-${activeThread.id}-${post.id}">${currentTrans ? currentTrans : '<span style="opacity: 0.5;">Translating...</span>'}</div>`;
         }
-
-        html += `
-            <div class="post" data-thread-id="${activeThread.id}" data-post-id="${post.id}">
+        
+        let headerHtml = '';
+        // If the author represents the thread OP (NO.xxxxx), we hide the entire header line as requested!
+        if (!post.author.toUpperCase().startsWith('NO.')) {
+            headerHtml = `
                 <div class="post-header">
                     <span class="post-author">${post.author}</span>
                     <span class="post-date">${post.date}</span>
                 </div>
+            `;
+        }
+
+        html += `
+            <div class="post" data-thread-id="${activeThread.id}" data-post-id="${post.id}">
+                ${headerHtml}
                 <div class="post-content">
                     <div class="content-jp">${post.jp}</div>
                     ${transHtml}
