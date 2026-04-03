@@ -125,8 +125,18 @@ async function fetchThreadData(threadId, url, isRefresh = false) {
         // Remove "? Good! ? Bad" polls along with any emojis or numbers attached to them
         jpText = jpText.replace(/(?:[\uD800-\uDBFF][\uDC00-\uDFFF]|\?|👍|👎)?\s*(Good!|Bad)\s*\d*/gi, '');
         
-        // Aggressively remove ANY line that contains NO. followed by numbers and a date pattern
-        jpText = jpText.split('\n').filter(line => !line.match(/NO\.?\s*\d+/i) && !line.match(/\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}/)).join('\n');
+        // Remove ANY line that contains NO. followed by numbers (but safely preserve #xxx date lines)
+        jpText = jpText.split('\n').filter(line => {
+            const hasNO = line.match(/NO\.?\s*\d+/i);
+            const isVeryShortNO = line.trim().match(/^NO\.?\s*\d+$/i);
+            
+            // Delete if the line has both "NO." and a year timestamp
+            if (hasNO && line.match(/\d{4}\/\d{2}\/\d{2}/)) return false;
+            // Delete if it's just a dangling "NO. XXXXX" header line
+            if (isVeryShortNO) return false;
+            
+            return true;
+        }).join('\n');
         
         jpText = jpText.trim(); 
         if (!jpText) continue;
