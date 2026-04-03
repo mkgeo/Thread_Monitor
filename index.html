@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forum Thread Monitor & Translator</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar glass">
+            <h1 class="brand">Thread <br><span class="accent">Monitor</span></h1>
+            
+            <div class="input-group">
+                <input type="text" id="url-input" placeholder="Paste forum URL here..." />
+                <button id="add-btn" class="btn-primary">Add Thread</button>
+            </div>
+
+            <div class="threads-list" id="threads-list">
+                <!-- Thread items will be added here dynamically -->
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar glass">
+                <div class="tab-container" id="tab-container">
+                    <!-- Tabs will be generated here -->
+                </div>
+                
+                <div class="controls">
+                    <button id="refresh-btn" class="btn-secondary" title="Check for new posts">↻ Refresh Thread</button>
+                    <label for="lang-select">Show translation:</label>
+                    <select id="lang-select" class="dropdown">
+                        <option value="en">English (Default)</option>
+                        <option value="zh">Chinese (中文)</option>
+                        <option value="none">Original Only</option>
+                    </select>
+                </div>
+            </header>
+
+            <div class="content-area glass" id="content-area">
+                <div class="empty-state">
+                    <h3>No Thread Selected</h3>
+                    <p>Add a forum thread URL from the left panel to start reading.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Script -->
+    <script src="app.js"></script>
+</body>
+</html>
