@@ -325,16 +325,22 @@ input:focus {
 
 /* Mobile Responsive Adjustments */
 @media screen and (max-width: 768px) {
+    body {
+        overflow: auto;
+    }
+
     .app-container {
         flex-direction: column;
         padding: 0;
         gap: 0;
+        height: auto;
+        min-height: 100vh;
     }
 
     .sidebar {
         width: 100%;
         height: auto;
-        max-height: 45vh;
+        max-height: none;
         padding: 0.8rem;
         gap: 0.5rem;
         border-right: none;
@@ -350,7 +356,7 @@ input:focus {
     }
 
     .brand br {
-        display: none; /* Hide the line break on mobile */
+        display: none;
     }
 
     .input-group {
@@ -370,7 +376,7 @@ input:focus {
     }
 
     .threads-list {
-        flex: 1 1 40px; /* Allow shrinking */
+        max-height: 15vh;
         min-height: 40px;
         overflow-y: auto;
     }
@@ -382,7 +388,7 @@ input:focus {
     }
 
     .api-settings input {
-        font-size: 1rem; /* Prevent iOS zoom on focus */
+        font-size: 1rem;
     }
 
     .topbar {
@@ -406,12 +412,14 @@ input:focus {
     
     .main-content {
         flex: 1;
-        min-height: 0; /* Important constraint for flex scrolling */
+        min-height: auto;
         border-radius: 0;
+        overflow: visible;
     }
 
     .content-area {
         padding: 1rem;
+        overflow-y: visible;
     }
 
     .post-header {
